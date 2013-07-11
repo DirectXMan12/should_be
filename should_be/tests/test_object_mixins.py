@@ -71,6 +71,15 @@ class TestBasicShoulds(unittest.TestCase):
         self.assertRaises(AssertionError, True.should_be_false)
         False.should_be_false()
 
+    def test_alias_methods_have_name(self):
+        try:
+            False.should_be_true()
+        except AssertionError, e:
+            if 'False should have been truthy, but was False' == e.message:
+                self.assertTrue(True)
+            else:
+                raise e
+
 class TestShouldRaises(unittest.TestCase):
     def test_should_raise_basic(self):
         self.assertRaises(AssertionError, (lambda x: 3).should_raise, Exception, 1)

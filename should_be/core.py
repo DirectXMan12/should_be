@@ -4,6 +4,7 @@ import inspect
 import numbers
 import re
 import abc
+from types import FunctionType, CodeType
 
 
 def findObjectName(mname=None):
@@ -28,6 +29,23 @@ def findObjectName(mname=None):
                 return trimmed[0:idx]
 
     return None
+
+# actually copy the method contents so that
+# we can have a different name
+def alias_method(new_name, f):
+    fr = inspect.currentframe().f_back # the current class
+
+    # duplicate the code with the new name
+    oc = f.func_code
+    new_code = CodeType(oc.co_argcount, oc.co_nlocals, oc.co_stacksize,
+                        oc.co_flags, oc.co_code, oc.co_consts,
+                        oc.co_names, oc.co_varnames, oc.co_filename,
+                        new_name, oc.co_firstlineno, oc.co_lnotab,
+                        oc.co_freevars, oc.co_cellvars)
+
+    # duplicate the function with the new name and add it to the class
+    fr.f_locals[new_name] = FunctionType(new_code, f.func_globals, new_name,
+                                         f.func_defaults, f.func_closure)
 
 class BaseMixin(object):
 
@@ -177,13 +195,13 @@ class ObjectMixin(BaseMixin):
         msg = '{txt} should have been truthy, but was {self}'
         self.should_follow(bool(self) is True, msg, val=True)
 
-    should_be_true = should_be_truthy
+    alias_method('should_be_true', should_be_truthy)
 
     def should_be_falsy(self):
         msg = '{txt} should not have falsy, but was anyway'
         self.should_follow(bool(self) is False, msg, val=False)
     
-    should_be_false = should_be_falsy
+    alias_method('should_be_false', should_be_falsy)
 
     def should_raise(self, target, *args, **kwargs):
         if not hasattr(self, '__call__'):
@@ -324,28 +342,28 @@ class NumberMixin(BaseMixin):
         msg = '{txt} should have been greater than {val}, but was {self}'
         self.should_follow(self > target, msg, val=target)
 
-    should_be_greater_than = should_be_above
-    should_be_more_than = should_be_above
+    alias_method('should_be_greater_than', should_be_above)
+    alias_method('should_be_more_than', should_be_above)
 
     def should_be_below(self, target):
         msg = '{txt} should have been less than {val}, but was {self}'
         self.should_follow(self < target)
 
-    should_be_less_than = should_be_below
+    alias_method('should_be_less_than', should_be_below)
 
     def should_be_at_or_above(self, target):
         msg = ('{txt} should have been greater than or equal '
                'to {val}, but was {self}')
         self.should_follow(self >= target, msg, val=target)
     
-    should_be_greater_than_or_equal_to = should_be_at_or_above
+    alias_method('should_be_greater_than_or_equal_to', should_be_at_or_above)
 
     def should_be_at_or_below(self, target):
         msg = ('{txt} should have been less than or equal '
                'to {val}, but was {self}')
         self.should_follow(self <= target, msg, val=target)
          
-    should_be_less_than_or_equal_to = should_be_at_or_below
+    alias_method('should_be_less_than_or_equal_to', should_be_at_or_below)
 
 class StringMixin(BaseMixin):
     target_class = basestring
@@ -451,8 +469,8 @@ class SizedMixin(BaseMixin):
                            val=target,
                            self_size=len(self))
 
-    should_have_len = should_be_size
-    should_have_length = should_be_size
+    alias_method('should_have_len', should_be_size)
+    alias_method('should_have_length', should_be_size)
 
     def should_be_size_of(self, target):
         msg = ('{txt} should have been the size of {val} ({val_size}), '
@@ -462,9 +480,9 @@ class SizedMixin(BaseMixin):
                            val_size=len(target),
                            self_size=len(self))
 
-    should_match_size_of = should_be_size_of
-    should_match_len_of = should_be_size_of
-    should_match_length_of = should_be_size_of
+    alias_method('should_match_size_of', should_be_size_of)
+    alias_method('should_match_len_of', should_be_size_of)
+    alias_method('should_match_length_of', should_be_size_of)
 
     def should_be_at_least_size(self, target):
         msg = ('{txt} should have been at least size {val}, but '
@@ -473,8 +491,8 @@ class SizedMixin(BaseMixin):
                            val=target,
                            self_size=len(self))
 
-    should_be_at_least_len = should_be_at_least_size
-    should_be_at_least_length = should_be_at_least_size
+    alias_method('should_be_at_least_len', should_be_at_least_size)
+    alias_method('should_be_at_least_length', should_be_at_least_size)
 
     def should_be_at_most_size(self, target):
         msg = ('{txt} should have been at most size {val}, but '
@@ -483,8 +501,8 @@ class SizedMixin(BaseMixin):
                            val=target,
                            self_size=len(self))
 
-    should_be_at_most_len = should_be_at_most_size
-    should_be_at_most_length = should_be_at_most_size
+    alias_method('should_be_at_most_len', should_be_at_most_size)
+    alias_method('should_be_at_most_length', should_be_at_most_size)
 
     def should_be_at_least_size_of(self, target):
         msg = ('{txt} should have been at least the size of {val} ({val_size})'
@@ -494,8 +512,8 @@ class SizedMixin(BaseMixin):
                            val_size=len(target),
                            self_size=len(self))
 
-    should_be_at_least_len_of = should_be_at_least_size_of
-    should_be_at_least_length_of = should_be_at_least_size_of
+    alias_method('should_be_at_least_len_of', should_be_at_least_size_of)
+    alias_method('should_be_at_least_length_of', should_be_at_least_size_of)
 
     def should_be_at_most_size_of(self, target):
         msg = ('{txt} should have been at most the size of {val} ({val_size})'
@@ -505,8 +523,8 @@ class SizedMixin(BaseMixin):
                            val_size=len(target),
                            self_size=len(self))
 
-    should_be_at_most_len_of = should_be_at_most_size_of
-    should_be_at_most_length_of = should_be_at_most_size_of
+    alias_method('should_be_at_most_len_of', should_be_at_most_size_of)
+    alias_method('should_be_at_most_length_of', should_be_at_most_size_of)
 
     def should_be_bigger_than(self, target):
         if isinstance(target, Sized):
@@ -526,7 +544,7 @@ class SizedMixin(BaseMixin):
                                val=target,
                                self_size=len(self))
 
-    should_be_longer_than = should_be_bigger_than
+    alias_method('should_be_longer_than', should_be_bigger_than)
 
     def should_be_smaller_than(self, target):
         if isinstance(target, Sized):
@@ -546,7 +564,7 @@ class SizedMixin(BaseMixin):
                                val=target,
                                self_size=len(self))
 
-    should_be_shorter_than = should_be_smaller_than
+    alias_method('should_be_shorter_than', should_be_smaller_than)
     
     def should_be_empty(self):
         msg = '{txt} should have been empty, but had size {val}'
