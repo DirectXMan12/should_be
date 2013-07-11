@@ -10,7 +10,12 @@ def findObjectName(mname=None):
     stack = inspect.stack()
 
     if mname is None:
-        mname = stack[2][3]
+        if 'should' not in stack[2][3]:
+            # go up a level if we've wrapped this method
+            mname = stack[3][3]
+        else:
+            mname = stack[2][3]
+        
 
     for frame in stack:
         frame_info = inspect.getframeinfo(frame[0]) 
@@ -135,12 +140,38 @@ class ObjectMixin(BaseMixin):
 
     def should_be_a(self, target):
         msg = '{txt} should have been a {val}, but was a {self_class}'
-        self.should_follow(isinstance(self, target), msg,
-                           val=target, self_class=type(self))
+        if inspect.isclass(target):
+            self.should_follow(isinstance(self, target), msg,
+                               val=target, self_class=type(self))
+        else:
+            # treat target as a string
+            str_target = str(target)
+            if '.' in str_target:
+                self_name = type(self).__module__ + '.' + type(self).__name__
+                self.should_follow(self_name == str_target, msg,
+                                   val=str_target, self_class=type(self))
+
+            else:
+                self.should_follow(type(self).__name__ == str_target, msg,
+                                   val=str_target, self_class=type(self))
+                
+            
 
     def shouldnt_be_a(self, target):
         msg = '{txt} should not have been a {val}, but was anyway'
-        self.should_follow(not isinstance(self, target), msg, val=target)
+        if inspect.isclass(target):
+            self.should_follow(not isinstance(self, target), msg, val=target)
+        else:
+            # treat target as a string
+            str_target = str(target)
+            if '.' in str_target:
+                self_name = type(self).__module__ + '.' + type(self).__name__
+                self.should_follow(self_name != str_target, msg,
+                                   val=str_target)
+
+            else:
+                self.should_follow(type(self).__name__ != str_target, msg,
+                                   val=str_target)
 
     def should_be_truthy(self):
         msg = '{txt} should have been truthy, but was {self}'
@@ -517,6 +548,14 @@ class SizedMixin(BaseMixin):
 
     should_be_shorter_than = should_be_smaller_than
     
+    def should_be_empty(self):
+        msg = '{txt} should have been empty, but had size {val}'
+        self.should_follow(len(self) == 0, msg, val=len(self))
+
+    def shouldnt_be_empty(self):
+        msg = '{txt} should not have been empty, but was anyway'
+        self.should_follow(len(self) > 0, msg)
+    
 
 class MappingMixin(BaseMixin):
     target_class = Mapping
@@ -526,6 +565,8 @@ class MappingMixin(BaseMixin):
 
     def should_be_part_of_values(self, target):
         IterableMixin.should_be_part_of(self.items(), target.items())
+    
+    # TODO(sross): should we override should_be_empty to show items?
 
 class SetMixin(BaseMixin):
     target_class = Set
