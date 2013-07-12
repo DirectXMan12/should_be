@@ -53,7 +53,7 @@ class BaseMixin(object):
 
     @staticmethod
     def mix_method(target, method_name, method, method_type=None):
-        print 'Mixing {0} into {1}'.format(method_name, target)
+        # print 'Mixing {0} into {1}'.format(method_name, target)
 
         if method_type == 'static':
             method = staticmethod(method)
@@ -89,7 +89,7 @@ class BaseMixin(object):
         def submix(target_cls):
             try:
                 if issubclass(target_cls.__metaclass__, abc.ABCMeta):
-                    print 'submixing {0}'.format(target_cls)
+                    # print 'submixing {0}'.format(target_cls)
                     for impl_cls in target_cls._abc_registry:
                         if 'UserDict' in str(impl_cls):
                             pass # for some reason this class segfaults

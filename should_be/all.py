@@ -7,7 +7,7 @@ def isMixin(obj):
     return inspect.isclass(obj) and issubclass(obj, core.BaseMixin) and obj != core.BaseMixin
 
 core_mixins = inspect.getmembers(core, isMixin)
-print 'Core Mixins were: {0}'.format(', '.join(m[0] for m in core_mixins))
+# print 'Core Mixins were: {0}'.format(', '.join(m[0] for m in core_mixins))
 
 try:
     _builtin_loaded_mixins
