@@ -360,6 +360,7 @@ class NumberMixin(BaseMixin):
         self.should_follow(self >= target, msg, val=target)
     
     alias_method('should_be_greater_than_or_equal_to', should_be_at_or_above)
+    alias_method('should_be_at_least', should_be_at_or_above)
 
     def should_be_at_or_below(self, target):
         msg = ('{txt} should have been less than or equal '
@@ -367,6 +368,7 @@ class NumberMixin(BaseMixin):
         self.should_follow(self <= target, msg, val=target)
          
     alias_method('should_be_less_than_or_equal_to', should_be_at_or_below)
+    alias_method('should_be_at_most', should_be_at_or_below)
 
 class StringMixin(BaseMixin):
     target_class = basestring
