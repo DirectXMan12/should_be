@@ -1,9 +1,8 @@
 from forbiddenfruit import curse
-from collections import Sequence, Mapping, Container, Iterable, Counter, Set, Sized
+from forbiddenfruit import reverse as reverse_the_curse
 import inspect
-import numbers
-import re
 import abc
+import re
 from types import FunctionType, CodeType
 
 
@@ -16,10 +15,10 @@ def findObjectName(mname=None):
             mname = stack[3][3]
         else:
             mname = stack[2][3]
-        
+
 
     for frame in stack:
-        frame_info = inspect.getframeinfo(frame[0]) 
+        frame_info = inspect.getframeinfo(frame[0])
         code = frame_info.code_context
         if code is not None:
             code = code[0]
@@ -29,6 +28,14 @@ def findObjectName(mname=None):
                 return trimmed[0:idx]
 
     return None
+
+def methodsToAvoid(subclasses):
+    res = []
+    for cls in subclasses:
+        res.extend([n for n, o
+                    in cls.__dict__.items()
+                    if inspect.ismethod(o) or inspect.isfunction(o)])
+    return res
 
 # actually copy the method contents so that
 # we can have a different name
@@ -60,21 +67,25 @@ class BaseMixin(object):
         elif method_type == 'class':
             method = classmethod(method)
 
+        if method_name in target.__dict__:
+            reverse_the_curse(target, method_name)
+
         if method_type is None and hasattr(method, '__func__'):
             curse(target, method_name, method.__func__)
         else:
             curse(target, method_name, method)
-         
+
+
 
     @classmethod
-    def __mixin__(cls, target, method_type=None):
+    def __mixin__(cls, target, method_type=None, avoid_list=[]):
         methods = inspect.getmembers(cls, inspect.ismethod)
         for method_name, method in methods:
             if (method_name not in dir(BaseMixin)
-                or method_name == 'should_follow'):
-                cls.mix_method(target, method_name, method, method_type)
-                        
-        
+                or (method_name == 'should_follow'
+                    and 'should_follow' not in dir(target))):
+                if method_name not in avoid_list:
+                    cls.mix_method(target, method_name, method, method_type)
 
     @classmethod
     def mix(cls, target=None):
@@ -82,10 +93,11 @@ class BaseMixin(object):
             target = cls.target_class
 
         cls.__mixin__(target)
+        attr_name = '_should_be_{0}.{1}'
+        attr_name = attr_name.format(cls.__module__,
+                                     cls.__name__)
+        cls.mix_method(target, attr_name, lambda: cls)
 
-        # TODO(sross): check for inheritance chains
-        #              (e.g. iterable shouldn't override
-        #               the methods set by Seqeunce)
         def submix(target_cls):
             try:
                 if issubclass(target_cls.__metaclass__, abc.ABCMeta):
@@ -99,14 +111,17 @@ class BaseMixin(object):
                                                          cls.__name__)
 
                             if attr_name not in dir(impl_cls):
-                                cls.__mixin__(impl_cls)
-                                cls.mix_method(target, attr_name, lambda x: True)
+                                subclasses = target.__subclasses__()
+                                mta = methodsToAvoid(subclasses)
+                                cls.__mixin__(impl_cls,
+                                              avoid_list=mta)
+                                cls.mix_method(impl_cls, attr_name, lambda: target_cls)
 
                     for subcls in target_cls.__subclasses__():
                         submix(subcls)
             except AttributeError:
                 pass
-        
+
         submix(target)
 
 
@@ -175,8 +190,8 @@ class ObjectMixin(BaseMixin):
             else:
                 self.should_follow(type(self).__name__ == str_target, msg,
                                    val=str_target, self_class=type(self))
-                
-            
+
+
 
     def shouldnt_be_a(self, target):
         msg = '{txt} should not have been a {val}, but was anyway'
@@ -203,7 +218,7 @@ class ObjectMixin(BaseMixin):
     def should_be_falsy(self):
         msg = '{txt} should not have falsy, but was anyway'
         self.should_follow(bool(self) is False, msg, val=False)
-    
+
     alias_method('should_be_false', should_be_falsy)
 
     def should_raise(self, target, *args, **kwargs):
@@ -211,7 +226,7 @@ class ObjectMixin(BaseMixin):
             msg_not_callable = "{txt} ({self}) should have been callable, but was not"
             self.should_follow(False, msg_not_callable)
 
-        msg = "{txt}({args}, {kwargs}) should have raise {val}, but did not" 
+        msg = "{txt}({args}, {kwargs}) should have raise {val}, but did not"
 
         try:
             self(*args, **kwargs)
@@ -223,7 +238,7 @@ class ObjectMixin(BaseMixin):
                                val=target,
                                args=', '.join(repr(a) for a in args),
                                kwargs=kwa)
-    
+
     def should_raise_with_message(self, target, tmsg, *args, **kwargs):
         if not hasattr(self, '__call__'):
             msg_not_callable = "{txt} ({self}) should have been callable, but was not"
@@ -243,7 +258,7 @@ class ObjectMixin(BaseMixin):
                                args=', '.join(repr(a) for a in args),
                                kwargs=kwa)
         else:
-            msg = "{txt}({args}, {kwargs}) should have raised {val}, but did not" 
+            msg = "{txt}({args}, {kwargs}) should have raised {val}, but did not"
             kwa = ', '.join('{0}={1}'.format(k,v) for k, v in kwargs.items())
             self.should_follow(False, msg,
                                val=target,
@@ -265,8 +280,8 @@ class NoneTypeMixin(BaseMixin):
 
             return new_method
 
-        methods = inspect.getmembers(ObjectMixin, inspect.ismethod) 
-        for method_name, method in methods: 
+        methods = inspect.getmembers(ObjectMixin, inspect.ismethod)
+        for method_name, method in methods:
             if (method_name not in dir(BaseMixin) or method_name == 'should_follow'):
                 new_method = factory(method_name, method)
                 setattr(NoneTypeMixin, method_name, staticmethod(new_method))
@@ -283,346 +298,5 @@ class NoneTypeMixin(BaseMixin):
         for method_name, method in methods:
             if (method_name not in dir(BaseMixin)
                 or method_name == 'should_follow'):
-                cls.mix_method(target, method_name, method, 
+                cls.mix_method(target, method_name, method,
                                method_type='keep')
-
-
-class NumberMixin(BaseMixin):
-    target_class = numbers.Real
-
-    def should_be_roughly(self, target, places=None, delta=None):
-        if self == target:
-            return
-
-        if delta is not None and places is not None:
-            raise TypeError('specify delta or places, not both')
-
-        if delta is not None:
-            msg = ("{txt} should have been within {delta} of {val},"
-                   " but was {self}, which is {actual_delta} from {val}") 
-            self.should_follow(abs(self - target) <= delta,
-                               msg,
-                               delta=delta,
-                               actual_delta=abs(self - target),
-                               val=target)
-        else:
-            if places is None:
-                places = 7
-
-            msg = ("{txt} should have been equal to {val} within {places}"
-                   " places, but was {self}")
-            self.should_follow(round(abs(self - target), places) == 0,
-                               msg,
-                               places=places,
-                               val=target)
-
-    def shouldnt_be_roughly(self, target, delta=None, places=None):
-        if delta is not None and places is not None:
-            raise TypeError('specify delta or places, not both')
-
-        if delta is not None:
-            msg = ("{txt} should not have been within {delta} of {val},"
-                   " but was {self}, which is {actual_delta} from {val}") 
-            expr = self != target and abs(self - target) > delta
-            self.should_follow(expr,
-                               msg,
-                               delta=delta,
-                               actual_delta=abs(self - target),
-                               val=target)
-        else:
-            if places is None:
-                places = 7
-
-            msg = ("{txt} should not have been equal to {val} within {places}"
-                   " places, but was {self}")
-            expr = self != target and round(abs(self - target), places) != 0
-            self.should_follow(expr,
-                               msg,
-                               places=places,
-                               val=target)
-
-    def should_be_above(self, target):
-        msg = '{txt} should have been greater than {val}, but was {self}'
-        self.should_follow(self > target, msg, val=target)
-
-    alias_method('should_be_greater_than', should_be_above)
-    alias_method('should_be_more_than', should_be_above)
-
-    def should_be_below(self, target):
-        msg = '{txt} should have been less than {val}, but was {self}'
-        self.should_follow(self < target)
-
-    alias_method('should_be_less_than', should_be_below)
-
-    def should_be_at_or_above(self, target):
-        msg = ('{txt} should have been greater than or equal '
-               'to {val}, but was {self}')
-        self.should_follow(self >= target, msg, val=target)
-    
-    alias_method('should_be_greater_than_or_equal_to', should_be_at_or_above)
-    alias_method('should_be_at_least', should_be_at_or_above)
-
-    def should_be_at_or_below(self, target):
-        msg = ('{txt} should have been less than or equal '
-               'to {val}, but was {self}')
-        self.should_follow(self <= target, msg, val=target)
-         
-    alias_method('should_be_less_than_or_equal_to', should_be_at_or_below)
-    alias_method('should_be_at_most', should_be_at_or_below)
-
-class StringMixin(BaseMixin):
-    target_class = basestring
-
-    def should_match(self, target):
-        msg = '{txt} should have matched {re}, but was {self} instead'
-        self.should_follow(re.match(target, self), msg, re=target)
-
-    def shouldnt_match(self, target):
-        msg = '{txt} should not have matched {re}, but did anyway'
-        self.should_follow(re.match(target, self) is None, msg, re=target)
-
-class SequenceMixin(BaseMixin):
-    target_class = Sequence
-
-    def should_have_same_items_as(self, target):
-        msg_smaller = ('{txt} should have been {val}, but did not have '
-                       'the items {items}')
-        msg_bigger = ('{txt} should have been {val}, but had the extra '
-                       'items {items}')
-        msg_diff = ('{txt} should have been {val}, but differed in items '
-                    '{i1} and {i2}')
-
-        fst = Counter(self)
-        snd = Counter(target)
-        
-        we_had = fst - snd
-        they_had = snd - fst
-        
-        if we_had != Counter() and they_had != Counter():
-            self.should_follow(fst == snd, msg_diff,
-                               val=target,
-                               i1=we_had.keys(),
-                               i2=they_had.keys())
-        
-        self.should_follow(we_had == {}, msg_bigger,
-                           val=target,
-                           items=list(we_had.elements()))
-
-        self.should_follow(they_had == {}, msg_smaller,
-                           val=target,
-                           items=list(they_had.elements()))
-
-    def should_be(self, target):
-        if self == target:
-            return
-
-        try:
-            len_msg = ('{txt} should have been {val}, but they had '
-                       ' different lengths ({l1} vs {l2})')
-            self.should_follow(len(self) == len(target), msg,
-                               val=target,
-                               l1=len(self),
-                               l2=len(target))
-            item_msg = ('{txt} should have been {val}, but they differed '
-                        ' at item {ind} ({i1} vs {i2})')
-            for i in xrange(len(self)):
-                self.should_follow(self[i] == target[i], msg,
-                                   val=target,
-                                   i1=self[i],
-                                   i2=target[i])
-        except (TypeError, NotImplementedError):
-            ObjectMixin.should_be(self, target)
-
-class IterableMixin(BaseMixin):
-    target_class = Iterable
-
-    def should_be_part_of(self, target):
-        msg = ('{txt} should have been part of {val}, but had extra '
-               'items {items}')
-
-        extra_items = []
-        for item in self:
-            if item not in target:
-                extra_items.append(item)
-
-        self.should_follow(len(extra_items) == 0, msg,
-                           val=target,
-                           items=extra_items)
-        
-class ContainerMixin(BaseMixin):
-    target_class = Container
-
-    def should_include(self, target):
-        if isinstance(target, Iterable):
-            msg = ('{txt} should have included {val}, but did not have '
-                  'items {items}')
-        
-            missing_items = []
-            for item in target:
-                if item not in self:
-                    missing_items.append(item)
-
-            self.should_follow(len(missing_items) == 0, msg,
-                               val=target,
-                               items=missing_items)
-        else:
-            msg = '{txt} should have included {val}, but did not'
-            self.should_follow(target in self, msg,
-                               val=target)
-
-class SizedMixin(BaseMixin):
-    target_class = Sized
-
-    def should_be_size(self, target):
-        msg = '{txt} should have been size {val}, but was size {self_size}'
-        self.should_follow(len(self) == target, msg,
-                           val=target,
-                           self_size=len(self))
-
-    alias_method('should_have_len', should_be_size)
-    alias_method('should_have_length', should_be_size)
-
-    def should_be_size_of(self, target):
-        msg = ('{txt} should have been the size of {val} ({val_size}), '
-                'but was size {self_size}')
-        self.should_follow(len(self) == len(target), msg,
-                           val=target,
-                           val_size=len(target),
-                           self_size=len(self))
-
-    alias_method('should_match_size_of', should_be_size_of)
-    alias_method('should_match_len_of', should_be_size_of)
-    alias_method('should_match_length_of', should_be_size_of)
-
-    def should_be_at_least_size(self, target):
-        msg = ('{txt} should have been at least size {val}, but '
-               'was size {self_size}')
-        self.should_follow(len(self) >= target, msg,
-                           val=target,
-                           self_size=len(self))
-
-    alias_method('should_be_at_least_len', should_be_at_least_size)
-    alias_method('should_be_at_least_length', should_be_at_least_size)
-
-    def should_be_at_most_size(self, target):
-        msg = ('{txt} should have been at most size {val}, but '
-               'was size {self_size}')
-        self.should_follow(len(self) <= target, msg,
-                           val=target,
-                           self_size=len(self))
-
-    alias_method('should_be_at_most_len', should_be_at_most_size)
-    alias_method('should_be_at_most_length', should_be_at_most_size)
-
-    def should_be_at_least_size_of(self, target):
-        msg = ('{txt} should have been at least the size of {val} ({val_size})'
-                ', but was size {self_size}')
-        self.should_follow(len(self) >= len(target), msg,
-                           val=target,
-                           val_size=len(target),
-                           self_size=len(self))
-
-    alias_method('should_be_at_least_len_of', should_be_at_least_size_of)
-    alias_method('should_be_at_least_length_of', should_be_at_least_size_of)
-
-    def should_be_at_most_size_of(self, target):
-        msg = ('{txt} should have been at most the size of {val} ({val_size})'
-                ', but was size {self_size}')
-        self.should_follow(len(self) <= len(target), msg,
-                           val=target,
-                           val_size=len(target),
-                           self_size=len(self))
-
-    alias_method('should_be_at_most_len_of', should_be_at_most_size_of)
-    alias_method('should_be_at_most_length_of', should_be_at_most_size_of)
-
-    def should_be_bigger_than(self, target):
-        if isinstance(target, Sized):
-            # we have a sized object
-            msg = ('{txt} should have been bigger than {val} ({val_size}), '
-                   'but was size {self_size}')
-            self.should_follow(len(self) > len(target), msg,
-                               val=target,
-                               val_size=len(target),
-                               self_size=len(self))
-
-        else:
-            # have a number 
-            msg = ('{txt} should have had size greater than {val}, but '
-                   'was size {self_size}')
-            self.should_follow(len(self) > target, msg,
-                               val=target,
-                               self_size=len(self))
-
-    alias_method('should_be_longer_than', should_be_bigger_than)
-
-    def should_be_smaller_than(self, target):
-        if isinstance(target, Sized):
-            # we have a sized object
-            msg = ('{txt} should have been smaller than {val} ({val_size}), '
-                   'but was size {self_size}')
-            self.should_follow(len(self) < len(target), msg,
-                               val=target,
-                               val_size=len(target),
-                               self_size=len(self))
-
-        else:
-            # have a number 
-            msg = ('{txt} should have had size less than {val}, but '
-                   'was size {self_size}')
-            self.should_follow(len(self) < target, msg,
-                               val=target,
-                               self_size=len(self))
-
-    alias_method('should_be_shorter_than', should_be_smaller_than)
-    
-    def should_be_empty(self):
-        msg = '{txt} should have been empty, but had size {val}'
-        self.should_follow(len(self) == 0, msg, val=len(self))
-
-    def shouldnt_be_empty(self):
-        msg = '{txt} should not have been empty, but was anyway'
-        self.should_follow(len(self) > 0, msg)
-    
-
-class MappingMixin(BaseMixin):
-    target_class = Mapping
-
-    def should_include_values(self, target):
-        ContainerMixin.should_include(self.items(), target.items())
-
-    def should_be_part_of_values(self, target):
-        IterableMixin.should_be_part_of(self.items(), target.items())
-    
-    # TODO(sross): should we override should_be_empty to show items?
-
-class SetMixin(BaseMixin):
-    target_class = Set
-    
-    def should_be(self, target):
-        msg_smaller = ('{txt} should have been {val}, but did not have '
-                       'the items {items}')
-        msg_bigger = ('{txt} should have been {val}, but had the extra '
-                       'items {items}')
-        msg_diff = ('{txt} should have been {val}, but differed in items '
-                    '{i1} and {i2}')
-
-        try:
-            we_had = self.difference(target)
-            they_had = target.differnce(self)
-            
-            if (we_had != {} and they_had != {}):
-                self.should_follow(they_had == they_had == {}, msg_diff,
-                                   val=target,
-                                   i1=we_had,
-                                   i2=they_had)
-
-            self.should_follow(we_had == {}, msg_bigger,
-                               val=target,
-                               items=we_had)
-
-            self.should_follow(they_had == {}, msg_smaller,
-                               val=target,
-                               items=they_had)
-        except TypeError:
-            ObjectMixin.should_be(self, target)
