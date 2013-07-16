@@ -1,4 +1,4 @@
-from should_be.core import BaseMixin, alias_method
+from should_be.core import BaseMixin, ObjectMixin
 from collections import Set
 
 
@@ -9,7 +9,7 @@ class SetMixin(BaseMixin):
         msg_smaller = ('{txt} should have been {val}, but did not have '
                        'the items {items}')
         msg_bigger = ('{txt} should have been {val}, but had the extra '
-                       'items {items}')
+                      'items {items}')
         msg_diff = ('{txt} should have been {val}, but differed in items '
                     '{i1} and {i2}')
 
@@ -31,7 +31,4 @@ class SetMixin(BaseMixin):
                                val=target,
                                items=they_had)
         except TypeError:
-            ObjectMixin.should_be(self, target)
-
-
-
+            ObjectMixin.should_be.__get__(self)(target)

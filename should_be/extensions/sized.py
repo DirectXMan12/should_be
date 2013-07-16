@@ -16,7 +16,7 @@ class SizedMixin(BaseMixin):
 
     def should_be_size_of(self, target):
         msg = ('{txt} should have been the size of {val} ({val_size}), '
-                'but was size {self_size}')
+               'but was size {self_size}')
         self.should_follow(len(self) == len(target), msg,
                            val=target,
                            val_size=len(target),
@@ -48,7 +48,7 @@ class SizedMixin(BaseMixin):
 
     def should_be_at_least_size_of(self, target):
         msg = ('{txt} should have been at least the size of {val} ({val_size})'
-                ', but was size {self_size}')
+               ', but was size {self_size}')
         self.should_follow(len(self) >= len(target), msg,
                            val=target,
                            val_size=len(target),
@@ -59,7 +59,7 @@ class SizedMixin(BaseMixin):
 
     def should_be_at_most_size_of(self, target):
         msg = ('{txt} should have been at most the size of {val} ({val_size})'
-                ', but was size {self_size}')
+               ', but was size {self_size}')
         self.should_follow(len(self) <= len(target), msg,
                            val=target,
                            val_size=len(target),

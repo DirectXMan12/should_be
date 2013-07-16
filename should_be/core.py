@@ -16,7 +16,6 @@ def findObjectName(mname=None):
         else:
             mname = stack[2][3]
 
-
     for frame in stack:
         frame_info = inspect.getframeinfo(frame[0])
         code = frame_info.code_context
@@ -29,6 +28,7 @@ def findObjectName(mname=None):
 
     return None
 
+
 def methodsToAvoid(subclasses):
     res = []
     for cls in subclasses:
@@ -37,22 +37,110 @@ def methodsToAvoid(subclasses):
                     if inspect.ismethod(o) or inspect.isfunction(o)])
     return res
 
+
+def buildFunction(baseFunc, code=None, glbls=None,
+                  name=None, defaults=None,
+                  kwdefaults=None, closure=None,
+                  annotations=None, doc=None, dct=None):
+
+    resf = None
+
+    def _f():
+        pass
+
+    if hasattr(_f, 'func_code'):
+        # Python 2.x
+        resf = FunctionType(code or baseFunc.func_code,
+                            glbls or baseFunc.func_globals,
+                            name or baseFunc.func_name,
+                            defaults or baseFunc.func_defaults,
+                            closure or baseFunc.func_closure)
+        resf.func_dict = dct or baseFunc.func_dict
+        resf.func_doc = doc or baseFunc.func_doc
+
+    else:
+        # Python 3.x
+        resf = FunctionType(code or baseFunc.__code__,
+                            glbls or baseFunc.__globals__,
+                            name or baseFunc.__name__,
+                            defaults or baseFunc.__defaults__,
+                            closure or baseFunc.__closure__)
+        resf.__kwdefaults__ = kwdefaults or baseFunc.__kwdefaults__
+        resf.__annotations__ = annotations or baseFunc.__annotations__
+        resf.__dict__ = dct or baseFunc.__dict__
+        resf.__doc__ = doc or baseFunc.__doc__
+
+    return resf
+
+
+def buildCode(baseCode, argcount=None, kwonlyargcount=None,
+              nlocals=None, stacksize=None, flags=None,
+              code=None, consts=None, names=None,
+              varnames=None, filename=None, name=None,
+              firstlineno=None, lnotab=None, freevars=None,
+              cellvars=None):
+
+    resc = None
+
+    def _f():
+        pass
+
+    if hasattr(_f, 'func_code'):
+        # Python 2.x
+        resc = CodeType(argcount or baseCode.co_argcount,
+                        nlocals or baseCode.co_nlocals,
+                        stacksize or baseCode.co_stacksize,
+                        flags or baseCode.co_flags,
+                        code or baseCode.co_code,
+                        consts or baseCode.co_consts,
+                        names or baseCode.co_names,
+                        varnames or baseCode.co_varnames,
+                        filename or baseCode.co_filename,
+                        name or baseCode.co_name,
+                        firstlineno or baseCode.co_firstlineno,
+                        lnotab or baseCode.co_lnotab,
+                        freevars or baseCode.co_freevars,
+                        cellvars or baseCode.co_cellvars)
+    else:
+        # Python 3.x
+        resc = CodeType(argcount or baseCode.co_argcount,
+                        kwonlyargcount or baseCode.co_kwonlyargcount,
+                        nlocals or baseCode.co_nlocals,
+                        stacksize or baseCode.co_stacksize,
+                        flags or baseCode.co_flags,
+                        code or baseCode.co_code,
+                        consts or baseCode.co_consts,
+                        names or baseCode.co_names,
+                        varnames or baseCode.co_varnames,
+                        filename or baseCode.co_filename,
+                        name or baseCode.co_name,
+                        firstlineno or baseCode.co_firstlineno,
+                        lnotab or baseCode.co_lnotab,
+                        freevars or baseCode.co_freevars,
+                        cellvars or baseCode.co_cellvars)
+
+    return resc
+
+
+def getFunctionCode(func):
+    try:
+        return func.func_code
+    except AttributeError:
+        return func.__code__
+
+
 # actually copy the method contents so that
 # we can have a different name
 def alias_method(new_name, f):
-    fr = inspect.currentframe().f_back # the current class
+    fr = inspect.currentframe().f_back  # the current class
 
     # duplicate the code with the new name
-    oc = f.func_code
-    new_code = CodeType(oc.co_argcount, oc.co_nlocals, oc.co_stacksize,
-                        oc.co_flags, oc.co_code, oc.co_consts,
-                        oc.co_names, oc.co_varnames, oc.co_filename,
-                        new_name, oc.co_firstlineno, oc.co_lnotab,
-                        oc.co_freevars, oc.co_cellvars)
+    oc = getFunctionCode(f)
+    new_code = buildCode(oc, name=new_name)
 
     # duplicate the function with the new name and add it to the class
-    fr.f_locals[new_name] = FunctionType(new_code, f.func_globals, new_name,
-                                         f.func_defaults, f.func_closure)
+    fr.f_locals[new_name] = buildFunction(f, name=new_name, code=new_code)
+
 
 class BaseMixin(object):
 
@@ -60,8 +148,6 @@ class BaseMixin(object):
 
     @staticmethod
     def mix_method(target, method_name, method, method_type=None):
-        print 'Mixing {0} into {1}'.format(method_name, target)
-
         if method_type == 'static':
             method = staticmethod(method)
         elif method_type == 'class':
@@ -75,15 +161,17 @@ class BaseMixin(object):
         else:
             curse(target, method_name, method)
 
-
-
     @classmethod
     def __mixin__(cls, target, method_type=None, avoid_list=[]):
         # methods = inspect.getmembers(cls, inspect.ismethod)
         methods = [(method_name, method) for method_name, method
                    in cls.__dict__.items()
                    if inspect.isfunction(method)]
-        methods.append(('should_follow', cls.should_follow.__func__))
+        try:
+            methods.append(('should_follow', cls.should_follow.__func__))
+        except AttributeError:
+            methods.append(('should_follow', cls.should_follow))
+
         for method_name, method in methods:
             in_base = method_name in BaseMixin.__dict__
             is_should_follow = method_name == 'should_follow'
@@ -91,8 +179,6 @@ class BaseMixin(object):
             if not in_base or (is_should_follow and not sf_in_target):
                 if method_name not in avoid_list:
                     cls.mix_method(target, method_name, method, method_type)
-                else:
-                    print 'Avoiding mixing {0} into {1} from {2}'.format(method_name, target, cls)
 
     @classmethod
     def mix(cls, target=None):
@@ -107,11 +193,11 @@ class BaseMixin(object):
 
         def submix(target_cls):
             try:
-                if issubclass(target_cls.__metaclass__, abc.ABCMeta):
+                if issubclass(type(target_cls), abc.ABCMeta):
                     # print 'submixing {0}'.format(target_cls)
                     for impl_cls in target_cls._abc_registry:
                         if 'UserDict' in str(impl_cls):
-                            pass # for some reason this class segfaults
+                            pass  # for some reason this class segfaults
                         else:
                             attr_name = '_should_be_{0}.{1}'
                             attr_name = attr_name.format(cls.__module__,
@@ -122,7 +208,8 @@ class BaseMixin(object):
                                 mta = methodsToAvoid(subclasses)
                                 cls.__mixin__(impl_cls,
                                               avoid_list=mta)
-                                cls.mix_method(impl_cls, attr_name, lambda: target_cls)
+                                cls.mix_method(impl_cls, attr_name,
+                                               lambda: target_cls)
 
                     for subcls in target_cls.__subclasses__():
                         submix(subcls)
@@ -130,7 +217,6 @@ class BaseMixin(object):
                 pass
 
         submix(target)
-
 
     def should_follow(self, assertion, msg=None, **kwargs):
         if msg is None:
@@ -198,8 +284,6 @@ class ObjectMixin(BaseMixin):
                 self.should_follow(type(self).__name__ == str_target, msg,
                                    val=str_target, self_class=type(self))
 
-
-
     def shouldnt_be_a(self, target):
         msg = '{txt} should not have been a {val}, but was anyway'
         if inspect.isclass(target):
@@ -230,7 +314,8 @@ class ObjectMixin(BaseMixin):
 
     def should_raise(self, target, *args, **kwargs):
         if not hasattr(self, '__call__'):
-            msg_not_callable = "{txt} ({self}) should have been callable, but was not"
+            msg_not_callable = ("{txt} ({self}) should have "
+                                "been callable, but was not")
             self.should_follow(False, msg_not_callable)
 
         msg = "{txt}({args}, {kwargs}) should have raise {val}, but did not"
@@ -240,7 +325,7 @@ class ObjectMixin(BaseMixin):
         except target:
             pass
         else:
-            kwa = ', '.join('{0}={1}'.format(k,v) for k, v in kwargs.items())
+            kwa = ', '.join('{0}={1}'.format(k, v) for k, v in kwargs.items())
             self.should_follow(False, msg,
                                val=target,
                                args=', '.join(repr(a) for a in args),
@@ -248,29 +333,32 @@ class ObjectMixin(BaseMixin):
 
     def should_raise_with_message(self, target, tmsg, *args, **kwargs):
         if not hasattr(self, '__call__'):
-            msg_not_callable = "{txt} ({self}) should have been callable, but was not"
+            msg_not_callable = ("{txt} ({self}) should have "
+                                "been callable, but was not")
             self.should_follow(False, msg_not_callable)
 
         try:
             self(*args, **kwargs)
-        except target, ex:
+        except target as ex:
             msg = ("{txt}({args}, {kwargs}) should have raised {val} "
-                   "with a message matching {re}, but had a message of "
-                   "{act_msg} instead")
-            kwa = ', '.join('{0}={1}'.format(k,v) for k, v in kwargs.items())
-            self.should_follow(re.match(tmsg, ex.message), msg,
-                               val=target,
+                   "with a message matching /{re}/, but had a message of "
+                   "'{act_msg}' instead")
+            kwa = ', '.join('{0}={1}'.format(k, v) for k, v in kwargs.items())
+            self.should_follow(re.match(tmsg, str(ex)), msg,
+                               val=target.__name__,
                                re=tmsg,
-                               act_msg=ex.message,
+                               act_msg=str(ex),
                                args=', '.join(repr(a) for a in args),
                                kwargs=kwa)
         else:
-            msg = "{txt}({args}, {kwargs}) should have raised {val}, but did not"
-            kwa = ', '.join('{0}={1}'.format(k,v) for k, v in kwargs.items())
+            msg = ("{txt}({args}, {kwargs}) should have raised "
+                   "{val}, but did not")
+            kwa = ', '.join('{0}={1}'.format(k, v) for k, v in kwargs.items())
             self.should_follow(False, msg,
-                               val=target,
+                               val=target.__name__,
                                args=', '.join(repr(a) for a in args),
                                kwargs=kwa)
+
 
 class NoneTypeMixin(BaseMixin):
     target_class = type(None)
@@ -282,16 +370,30 @@ class NoneTypeMixin(BaseMixin):
     def _load_methods(cls):
         # python doesn't close in loops, grumble...
         def factory(method_name, method):
-            def new_method(*args, **kwargs):
-                method.__func__(None, *args, **kwargs)
+            if hasattr(method, '__func__'):
+                # Python 2.x
+                def new_method(*args, **kwargs):
+                    method.__func__(None, *args, **kwargs)
 
-            return new_method
+                return new_method
+            else:
+                # Python 3.x
+                def new_method(*args, **kwargs):
+                    method(None, *args, **kwargs)
 
-        methods = inspect.getmembers(ObjectMixin, inspect.ismethod)
+                return new_method
+
+        methods = [(method_name, method) for method_name, method
+                   in ObjectMixin.__dict__.items()
+                   if inspect.isfunction(method)]
+        try:
+            methods.append(('should_follow', cls.should_follow.__func__))
+        except AttributeError:
+            methods.append(('should_follow', cls.should_follow))
+
         for method_name, method in methods:
-            if (method_name not in dir(BaseMixin) or method_name == 'should_follow'):
-                new_method = factory(method_name, method)
-                setattr(NoneTypeMixin, method_name, staticmethod(new_method))
+            new_method = factory(method_name, method)
+            setattr(NoneTypeMixin, method_name, staticmethod(new_method))
 
     @classmethod
     def __mixin__(cls, target):
@@ -304,6 +406,7 @@ class NoneTypeMixin(BaseMixin):
 
         for method_name, method in methods:
             if (method_name not in dir(BaseMixin)
-                or method_name == 'should_follow'):
+                    or method_name == 'should_follow'):
+
                 cls.mix_method(target, method_name, method,
                                method_type='keep')

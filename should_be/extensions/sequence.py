@@ -1,4 +1,4 @@
-from should_be.core import BaseMixin, alias_method
+from should_be.core import BaseMixin, ObjectMixin
 from collections import Sequence, Counter
 
 
@@ -9,7 +9,7 @@ class SequenceMixin(BaseMixin):
         msg_smaller = ('{txt} should have been {val}, but did not have '
                        'the items {items}')
         msg_bigger = ('{txt} should have been {val}, but had the extra '
-                       'items {items}')
+                      'items {items}')
         msg_diff = ('{txt} should have been {val}, but differed in items '
                     '{i1} and {i2}')
 
@@ -46,11 +46,18 @@ class SequenceMixin(BaseMixin):
                                l2=len(target))
             item_msg = ('{txt} should have been {val}, but they differed '
                         ' at item {ind} ({i1} vs {i2})')
-            for i in xrange(len(self)):
+
+            rangef = range
+            try:
+                rangef = xrange
+            except NameError:
+                pass
+
+            for i in rangef(len(self)):
                 self.should_follow(self[i] == target[i], item_msg,
                                    val=target,
                                    ind=i,
                                    i1=self[i],
                                    i2=target[i])
         except (TypeError, NotImplementedError):
-            ObjectMixin.should_be(self, target)
+            ObjectMixin.should_be.__get__(self)(target)

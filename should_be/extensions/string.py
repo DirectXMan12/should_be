@@ -1,9 +1,12 @@
-from should_be.core import BaseMixin, alias_method
+from should_be.core import BaseMixin
 import re
 
 
 class StringMixin(BaseMixin):
-    target_class = basestring
+    try:
+        target_class = basestring
+    except NameError:
+        target_class = str
 
     def should_match(self, target):
         msg = '{txt} should have matched {re}, but was {self} instead'

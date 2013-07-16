@@ -1,4 +1,4 @@
-from should_be.core import BaseMixin, alias_method
+from should_be.core import BaseMixin
 from collections import Container, Iterable
 
 
@@ -8,7 +8,7 @@ class ContainerMixin(BaseMixin):
     def should_include(self, target):
         if isinstance(target, Iterable):
             msg = ('{txt} should have included {val}, but did not have '
-                  'items {items}')
+                   'items {items}')
 
             missing_items = []
             for item in target:

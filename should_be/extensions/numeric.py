@@ -1,6 +1,7 @@
 from should_be.core import BaseMixin, alias_method
 import numbers
 
+
 class NumberMixin(BaseMixin):
     target_class = numbers.Real
 
@@ -64,7 +65,7 @@ class NumberMixin(BaseMixin):
 
     def should_be_below(self, target):
         msg = '{txt} should have been less than {val}, but was {self}'
-        self.should_follow(self < target)
+        self.should_follow(self < target, msg, val=target)
 
     alias_method('should_be_less_than', should_be_below)
 
@@ -83,4 +84,3 @@ class NumberMixin(BaseMixin):
 
     alias_method('should_be_less_than_or_equal_to', should_be_at_or_below)
     alias_method('should_be_at_most', should_be_at_or_below)
-

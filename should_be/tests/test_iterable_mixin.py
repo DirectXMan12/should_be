@@ -1,5 +1,6 @@
-import should_be.all
+import should_be.all  # noqa
 import unittest
+
 
 class TestIterableMixin(unittest.TestCase):
     def setUp(self):

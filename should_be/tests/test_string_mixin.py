@@ -1,5 +1,6 @@
-import should_be.all
+import should_be.all  # noqa
 import unittest
+
 
 class TestStringShoulds(unittest.TestCase):
     def test_should_match(self):

@@ -1,6 +1,7 @@
-import should_be.all
+import should_be.all  # noqa
 from should_be import core as sc
 import unittest
+
 
 class TestBasicShoulds(unittest.TestCase):
     def test_should_be(self):
@@ -29,7 +30,7 @@ class TestBasicShoulds(unittest.TestCase):
 
     def test_should_be_in(self):
         self.assertRaises(AssertionError, 'a'.should_be_in, ['b'])
-        'a'.should_be_in(['a','b'])
+        'a'.should_be_in(['a', 'b'])
 
     def test_shouldnt_be_in(self):
         self.assertRaises(AssertionError, 'a'.shouldnt_be_in, ['a'])
@@ -59,7 +60,7 @@ class TestBasicShoulds(unittest.TestCase):
 
     def test_shouldnt_be_a_str_full(self):
         om = sc.ObjectMixin()
-        self.assertRaises(AssertionError, om.shouldnt_be_a, 
+        self.assertRaises(AssertionError, om.shouldnt_be_a,
                           'should_be.core.ObjectMixin')
         'a'.shouldnt_be_a('should_be.core.ObjectMixin')
 
@@ -72,18 +73,24 @@ class TestBasicShoulds(unittest.TestCase):
         False.should_be_false()
 
     def test_alias_methods_have_name(self):
-        msg = 'False should have been truthy, but was False' 
+        msg = 'False should have been truthy, but was False'
         self.assertRaisesRegexp(AssertionError, msg, False.should_be_true)
+
 
 class TestShouldRaises(unittest.TestCase):
     def test_should_raise_basic(self):
-        self.assertRaises(AssertionError, (lambda x: 3).should_raise, Exception, 1)
+        self.assertRaises(AssertionError, (lambda x: 3).should_raise,
+                          Exception, 1)
         (lambda: 1/0).should_raise(Exception)
 
     def test_should_raises_not_callable(self):
         self.assertRaises(AssertionError, (3).should_raise, Exception)
-        self.assertRaises(AssertionError, (3).should_raise_with_message, Exception, 'a')
+        self.assertRaises(AssertionError, (3).should_raise_with_message,
+                          Exception, 'a')
 
     def test_should_raise_with_message(self):
-        self.assertRaises(AssertionError, (lambda x: x/2).should_raise_with_message, Exception, 'a', 1)
-        (lambda x: x/0).should_raise_with_message(ZeroDivisionError, 'integer division or modulo by zero', 1)
+        self.assertRaises(AssertionError,
+                          (lambda x: x/2).should_raise_with_message,
+                          Exception, 'a', 1)
+        msg = r'(integer )?division( or modulo)? by zero'
+        (lambda x: x/0).should_raise_with_message(ZeroDivisionError, msg, 1)

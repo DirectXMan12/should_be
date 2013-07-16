@@ -12,6 +12,9 @@ Requirements
 - forbiddenfruit
 - a version of python with which forbidden fruit will work
   (must implement the CTypes/CPython Python API)
+- Python 2.7 or 3.3
+  (it may work with other versions, such as other 3.x versions,
+  but it has not been tested with these versions)
 
 Example
 =======

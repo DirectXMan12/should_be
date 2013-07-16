@@ -1,4 +1,4 @@
-from should_be.core import BaseMixin, alias_method
+from should_be.core import BaseMixin
 from should_be.extensions.container import ContainerMixin
 from should_be.extensions.iterable import IterableMixin
 from collections import Mapping
