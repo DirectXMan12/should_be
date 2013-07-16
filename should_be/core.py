@@ -60,7 +60,7 @@ class BaseMixin(object):
 
     @staticmethod
     def mix_method(target, method_name, method, method_type=None):
-        # print 'Mixing {0} into {1}'.format(method_name, target)
+        print 'Mixing {0} into {1}'.format(method_name, target)
 
         if method_type == 'static':
             method = staticmethod(method)
@@ -79,13 +79,20 @@ class BaseMixin(object):
 
     @classmethod
     def __mixin__(cls, target, method_type=None, avoid_list=[]):
-        methods = inspect.getmembers(cls, inspect.ismethod)
+        # methods = inspect.getmembers(cls, inspect.ismethod)
+        methods = [(method_name, method) for method_name, method
+                   in cls.__dict__.items()
+                   if inspect.isfunction(method)]
+        methods.append(('should_follow', cls.should_follow.__func__))
         for method_name, method in methods:
-            if (method_name not in dir(BaseMixin)
-                or (method_name == 'should_follow'
-                    and 'should_follow' not in dir(target))):
+            in_base = method_name in BaseMixin.__dict__
+            is_should_follow = method_name == 'should_follow'
+            sf_in_target = 'should_follow' in dir(target)
+            if not in_base or (is_should_follow and not sf_in_target):
                 if method_name not in avoid_list:
                     cls.mix_method(target, method_name, method, method_type)
+                else:
+                    print 'Avoiding mixing {0} into {1} from {2}'.format(method_name, target, cls)
 
     @classmethod
     def mix(cls, target=None):

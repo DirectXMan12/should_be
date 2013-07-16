@@ -15,7 +15,7 @@ class TestBasicShoulds(unittest.TestCase):
         self.assertRaises(AssertionError, (3).should_be_exactly, 4)
         (3).should_be_exactly(3)
 
-    def test_should_be_exactly(self):
+    def test_shouldnt_be_exactly(self):
         self.assertRaises(AssertionError, (3).shouldnt_be_exactly, 3)
         (3).shouldnt_be_exactly(4)
 
@@ -23,7 +23,7 @@ class TestBasicShoulds(unittest.TestCase):
         self.assertRaises(AssertionError, (3).should_be_none)
         None.should_be_none()
 
-    def test_should_be_none(self):
+    def test_shouldnt_be_none(self):
         self.assertRaises(AssertionError, None.shouldnt_be_none)
         (3).shouldnt_be_none()
 

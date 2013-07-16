@@ -15,19 +15,19 @@ class SetMixin(BaseMixin):
 
         try:
             we_had = self.difference(target)
-            they_had = target.differnce(self)
+            they_had = target.difference(self)
 
-            if (we_had != {} and they_had != {}):
-                self.should_follow(they_had == they_had == {}, msg_diff,
+            if (we_had != set() and they_had != set()):
+                self.should_follow(they_had == they_had == set(), msg_diff,
                                    val=target,
                                    i1=we_had,
                                    i2=they_had)
 
-            self.should_follow(we_had == {}, msg_bigger,
+            self.should_follow(we_had == set(), msg_bigger,
                                val=target,
                                items=we_had)
 
-            self.should_follow(they_had == {}, msg_smaller,
+            self.should_follow(they_had == set(), msg_smaller,
                                val=target,
                                items=they_had)
         except TypeError:

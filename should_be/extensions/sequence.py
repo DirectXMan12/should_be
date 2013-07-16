@@ -40,15 +40,16 @@ class SequenceMixin(BaseMixin):
         try:
             len_msg = ('{txt} should have been {val}, but they had '
                        ' different lengths ({l1} vs {l2})')
-            self.should_follow(len(self) == len(target), msg,
+            self.should_follow(len(self) == len(target), len_msg,
                                val=target,
                                l1=len(self),
                                l2=len(target))
             item_msg = ('{txt} should have been {val}, but they differed '
                         ' at item {ind} ({i1} vs {i2})')
             for i in xrange(len(self)):
-                self.should_follow(self[i] == target[i], msg,
+                self.should_follow(self[i] == target[i], item_msg,
                                    val=target,
+                                   ind=i,
                                    i1=self[i],
                                    i2=target[i])
         except (TypeError, NotImplementedError):

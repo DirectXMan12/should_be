@@ -1,5 +1,5 @@
 from should_be.core import BaseMixin, alias_method
-from collections import Container
+from collections import Container, Iterable
 
 
 class ContainerMixin(BaseMixin):
