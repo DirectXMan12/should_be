@@ -28,3 +28,6 @@ class TestSequenceMixin(unittest.TestCase):
                                 self.lst.should_be, [1, 3, 4])
 
         self.lst.should_be([1, 2, 3])
+
+    def test_list_should_be_falls_back(self):
+        self.assertRaises(AssertionError, self.lst.should_be, 1)

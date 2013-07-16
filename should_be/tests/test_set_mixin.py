@@ -22,3 +22,6 @@ class TestSetMixin(unittest.TestCase):
                                 {1, 4, 2})
 
         self.st.should_be({1, 2, 3})
+
+    def test_set_should_be_fall_back(self):
+        self.assertRaises(AssertionError, self.st.should_be, 3)

@@ -72,13 +72,8 @@ class TestBasicShoulds(unittest.TestCase):
         False.should_be_false()
 
     def test_alias_methods_have_name(self):
-        try:
-            False.should_be_true()
-        except AssertionError, e:
-            if 'False should have been truthy, but was False' == e.message:
-                self.assertTrue(True)
-            else:
-                raise e
+        msg = 'False should have been truthy, but was False' 
+        self.assertRaisesRegexp(AssertionError, msg, False.should_be_true)
 
 class TestShouldRaises(unittest.TestCase):
     def test_should_raise_basic(self):
