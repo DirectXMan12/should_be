@@ -17,3 +17,15 @@ class IterableMixin(BaseMixin):
         self.should_follow(len(extra_items) == 0, msg,
                            val=target,
                            items=extra_items)
+
+    def shouldnt_be_part_of(self, target):
+        msg = '{txt} should not have been part of {val}, but was anyway'
+
+        extra_items = []
+        for item in self:
+            if item not in target:
+                extra_items.append(item)
+
+        self.should_follow(len(extra_items) > 0, msg,
+                           val=target,
+                           items=extra_items)

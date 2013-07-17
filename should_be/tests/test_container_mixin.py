@@ -21,3 +21,17 @@ class TestContainerMixin(unittest.TestCase):
                                 self.lst.should_include, 4)
 
         self.lst.should_include(3)
+
+    def test_shouldnt_include_iter(self):
+        err_msg = 'should not have included'
+        self.assertRaisesRegexp(AssertionError, err_msg,
+                                self.lst.shouldnt_include, [2, 3])
+
+        self.lst.shouldnt_include([4, 5])
+
+    def test_shouldnt_include_item(self):
+        err_msg = 'should not have included'
+        self.assertRaisesRegexp(AssertionError, err_msg,
+                                self.lst.shouldnt_include, 3)
+
+        self.lst.shouldnt_include(4)

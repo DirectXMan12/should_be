@@ -11,3 +11,9 @@ class TestIterableMixin(unittest.TestCase):
                           self.lst.should_be_part_of, [2, 3, 4])
 
         self.lst.should_be_part_of([1, 2, 3, 4])
+
+    def test_shouldnt_be_part_of(self):
+        self.assertRaises(AssertionError,
+                          self.lst.shouldnt_be_part_of, [1, 2, 3, 4])
+
+        self.lst.shouldnt_be_part_of([2, 3, 4])
