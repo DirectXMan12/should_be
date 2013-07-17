@@ -106,3 +106,10 @@ with :python:`import should_be.all`.
    and set the class variable :python:`source_class` to the name of your `object` assertions
    class.  You can then simply run :python:`MyNoneTypeMixin.mix()`, and your methods will
    be automatically retrieved and converted from your :python:`object` mixin class.
+
+.. note::
+
+   Assertions for ABCs (such as Sequence) will be automatically mixed in to 'registered'
+   classes that do not inherit methods from the ABCs normally (such as list, etc) when
+   the :python:`mix()` method is called (this will also check for classes that are registered
+   to subclasses of the ABCs).
