@@ -19,7 +19,7 @@ Requirements
 Assertions
 ==========
 
-See `ASSERTIONS.rst`_
+See `ASSERTIONS.rst </ASSERTIONS.rst>`_
 
 Example
 =======
