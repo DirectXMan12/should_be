@@ -362,12 +362,13 @@ class ObjectMixin(BaseMixin):
 
 class NoneTypeMixin(BaseMixin):
     target_class = type(None)
+    source_class = ObjectMixin
 
     _already_loaded = False
     # this works around None methods being 'unbound'
 
     @classmethod
-    def _load_methods(cls):
+    def _load_methods(cls, src=ObjectMixin):
         # python doesn't close in loops, grumble...
         def factory(method_name, method):
             if hasattr(method, '__func__'):
@@ -384,7 +385,7 @@ class NoneTypeMixin(BaseMixin):
                 return new_method
 
         methods = [(method_name, method) for method_name, method
-                   in ObjectMixin.__dict__.items()
+                   in src.__dict__.items()
                    if inspect.isfunction(method)]
         try:
             methods.append(('should_follow', cls.should_follow.__func__))
@@ -393,15 +394,15 @@ class NoneTypeMixin(BaseMixin):
 
         for method_name, method in methods:
             new_method = factory(method_name, method)
-            setattr(NoneTypeMixin, method_name, staticmethod(new_method))
+            setattr(cls, method_name, staticmethod(new_method))
 
     @classmethod
     def __mixin__(cls, target):
         if not cls._already_loaded:
-            cls._load_methods()
+            cls._load_methods(src=cls.source_class)
 
         methods = [(meth_name, meth) for (meth_name, meth)
-                   in NoneTypeMixin.__dict__.items()
+                   in cls.__dict__.items()
                    if isinstance(meth, staticmethod)]
 
         for method_name, method in methods:
