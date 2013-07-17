@@ -5,9 +5,8 @@ Assertions
 All assertions and their parameters are listed here,
 organized by target class.  Assertions with a parameter
 list mentioned take 1 parameter (a pair of empty parentheses
-will be noted if an assertion takes no parameters).  Assertions
-with no specific documentation (just a name) do exactly
-what they sound like.  '/' denotes an opposite,
+will be noted if an assertion takes no parameters).
+'/' denotes an opposite,
 while ',' denotes an alias.  Some objects override
 methods from object mixin, but those are not explicitly
 listed in the object sections.
@@ -22,8 +21,10 @@ should_be_exactly / shouldnt_be_exactly
     assert that self :code:`is`/:code:`is not` target
 
 should_be_none / shouldnt_be_none : ()
+    assert that self is/is not None
 
 should_be_in / shouldnt_be_in
+    assert that self is/is not in target
 
 should_be_a / shouldnt_be_a
     assert that self is/is not an instance of target
@@ -71,20 +72,27 @@ should_be_size_of, should_match_size_of, should_match_len_of, should_match_lengt
     assert that self has the same size as target
 
 should_be_at_least_size, should_be_at_least_len, should_be_at_least_length
+    assert that the size of self is at least target
 
 should_be_at_most_size, should_be_at_most_len, should_be_at_most_length
+    assert that the size of self is at most target
 
 should_be_at_least_size_of, should_be_at_least_len_of, should_be_at_least_length_of
+    assert that the size of self is at least that of target
 
 should_be_at_most_size_of, should_be_at_most_len_of, should_be_at_most_length_of
+    assert that the size of self is at most that of target
 
 should_be_bigger_than
     if target is a Sized, assert that the size of self is larger than that of
     target.  Otherwise, assert that the size of self is greater than target
 
 should_be_smaller_than
+    if target is a Sized, assert that the size of self is smaller than that of
+    target.  Otherwise, assert that the size of self is less than target
 
 should_be_empty / shouldnt_be_empty : ()
+    assert that self is/is not empty (i.e. of size 0)
 
 Number (Real)
 =============
@@ -95,12 +103,16 @@ should_be_roughly / shouldnt_be_roughly : (target, places=None, delta=None)
     is the same as :code:`places=7`)
 
 should_be_above, should_be_greater_than, should_be_more_than
+    assert that self is greater than target
 
 should_be_below, should_be_less_than
+    assert that self is less than target
 
 should_be_at_or_above, should_be_greater_than_or_equal_to, should_be_at_least
+    assert that self is greater than or equal to target
 
 should_be_at_or_below, should_be_less_than_or_equal_to, should_be_at_most
+    assert that self is less than or equal to target
 
 Mapping
 =======
