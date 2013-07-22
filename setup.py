@@ -8,7 +8,7 @@ setup(
     version='0.1.0',
     author='Solly Ross',
     author_email='sross@redhat.com',
-    packages=['should_be', 'should_be.tests'],
+    packages=['should_be', 'should_be.tests', 'should_be.extensions'],
     description='Python Assertion Helpers inspired by Shouldly',
     long_description=open('README.txt').read(),
     license='LICENSE.txt',
