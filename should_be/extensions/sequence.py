@@ -39,13 +39,13 @@ class SequenceMixin(BaseMixin):
 
         try:
             len_msg = ('{txt} should have been {val}, but they had '
-                       ' different lengths ({l1} vs {l2})')
+                       'different lengths ({l1} vs {l2})')
             self.should_follow(len(self) == len(target), len_msg,
                                val=target,
                                l1=len(self),
                                l2=len(target))
             item_msg = ('{txt} should have been {val}, but they differed '
-                        ' at item {ind} ({i1} vs {i2})')
+                        'at item {ind} ({i1} vs {i2})')
 
             rangef = range
             try:
