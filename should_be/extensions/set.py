@@ -14,8 +14,8 @@ class SetMixin(BaseMixin):
                     '{i1} and {i2}')
 
         try:
-            we_had = self.difference(target)
-            they_had = target.difference(self)
+            we_had = self - target
+            they_had = target - self
 
             if (we_had != set() and they_had != set()):
                 self.should_follow(they_had == they_had == set(), msg_diff,
