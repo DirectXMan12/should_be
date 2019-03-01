@@ -1,5 +1,9 @@
 from should_be.core import BaseMixin
-from collections import Container, Iterable
+try:
+    from collections.abc import Container, Iterable
+except ImportError:
+    # python < 3.3
+    from collections import Container, Iterable
 
 
 class ContainerMixin(BaseMixin):

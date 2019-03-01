@@ -1,7 +1,11 @@
 from should_be.core import BaseMixin
 from should_be.extensions.container import ContainerMixin
 from should_be.extensions.iterable import IterableMixin
-from collections import Mapping
+try:
+    from collections.abc import Mapping
+except ImportError:
+    # python < 3.3
+    from collections import Mapping
 
 
 class MappingMixin(BaseMixin):

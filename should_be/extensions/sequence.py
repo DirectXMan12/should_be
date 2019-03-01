@@ -1,5 +1,9 @@
 from should_be.core import BaseMixin, ObjectMixin
-from collections import Sequence, Counter
+try:
+    from collections.abc import Sequence, Counter
+except ImportError:
+    # python < 3.3
+    from collections import Sequence, Counter
 
 
 class SequenceMixin(BaseMixin):
