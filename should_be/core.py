@@ -6,6 +6,36 @@ import re
 from types import FunctionType, CodeType
 
 
+# this whole bit does unspeakable things,
+# but so does the rest of this library.
+# if there's an issue with extension methods
+# not appearing, check here.
+def getRegisteredABCsPurePython(cls):
+    return cls._abc_registry
+
+
+if not hasattr(abc, 'ABC'):
+    getRegisteredABCs = getRegisteredABCsPurePython
+else:
+    # detect python 3.7 C abc issues
+    class _ABCTester(abc.ABC):
+        pass
+
+    if hasattr(_ABCTester, '_abc_registry'):
+        # python <= 3.6, python 3.7 pure-Python ABCs
+        getRegisteredABCs = getRegisteredABCsPurePython
+    else:
+        # python 3.7 C abcs
+        def getRegisteredABCs(cls):
+            import _abc
+            dump = _abc._get_dump(cls)
+            for cls_ref in dump[0]:
+                # dereference the weakref,
+                # since this is a normal set of weakrefs,
+                # not a weak set
+                yield cls_ref()
+
+
 def findObjectName(mname=None):
     stack = inspect.stack()
 
@@ -192,29 +222,26 @@ class BaseMixin(object):
         cls.mix_method(target, attr_name, lambda: cls)
 
         def submix(target_cls):
-            try:
-                if issubclass(type(target_cls), abc.ABCMeta):
-                    # print 'submixing {0}'.format(target_cls)
-                    for impl_cls in target_cls._abc_registry:
-                        if 'UserDict' in str(impl_cls):
-                            pass  # for some reason this class segfaults
-                        else:
-                            attr_name = '_should_be_{0}.{1}'
-                            attr_name = attr_name.format(cls.__module__,
-                                                         cls.__name__)
+            if issubclass(type(target_cls), abc.ABCMeta):
+                # print 'submixing {0}'.format(target_cls)
+                for impl_cls in getRegisteredABCs(target_cls):
+                    if 'UserDict' in str(impl_cls):
+                        pass  # for some reason this class segfaults
+                    else:
+                        attr_name = '_should_be_{0}.{1}'
+                        attr_name = attr_name.format(cls.__module__,
+                                                     cls.__name__)
 
-                            if attr_name not in dir(impl_cls):
-                                subclasses = target.__subclasses__()
-                                mta = methodsToAvoid(subclasses)
-                                cls.__mixin__(impl_cls,
-                                              avoid_list=mta)
-                                cls.mix_method(impl_cls, attr_name,
-                                               lambda: target_cls)
+                        if attr_name not in dir(impl_cls):
+                            subclasses = target.__subclasses__()
+                            mta = methodsToAvoid(subclasses)
+                            cls.__mixin__(impl_cls,
+                                          avoid_list=mta)
+                            cls.mix_method(impl_cls, attr_name,
+                                           lambda: target_cls)
 
-                    for subcls in target_cls.__subclasses__():
-                        submix(subcls)
-            except AttributeError:
-                pass
+                for subcls in target_cls.__subclasses__():
+                    submix(subcls)
 
         submix(target)
 
