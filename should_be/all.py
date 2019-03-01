@@ -13,6 +13,7 @@ def isMixin(obj):
             and issubclass(obj, core.BaseMixin)
             and obj != core.BaseMixin)
 
+
 default_mixins = []
 
 # first get core mixings
