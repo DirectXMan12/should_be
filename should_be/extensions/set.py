@@ -1,5 +1,9 @@
 from should_be.core import BaseMixin, ObjectMixin
-from collections import Set
+try:
+    from collections.abc import Set
+except ImportError:
+    # python < 3.3
+    from collections import Set
 
 
 class SetMixin(BaseMixin):

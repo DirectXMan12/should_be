@@ -1,5 +1,9 @@
 from should_be.core import BaseMixin, alias_method
-from collections import Sized
+try:
+    from collections.abc import Sized
+except ImportError:
+    # python < 3.3
+    from collections import Sized
 
 
 class SizedMixin(BaseMixin):
