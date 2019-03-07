@@ -3,7 +3,7 @@ from setuptools import setup
 
 setup(
     name='shouldbe',
-    version='0.1.1',
+    version='0.1.2',
     author='Solly Ross',
     author_email='sross@redhat.com',
     packages=['should_be', 'should_be.tests', 'should_be.extensions'],
