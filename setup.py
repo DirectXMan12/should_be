@@ -8,7 +8,7 @@ setup(
     author_email='sross@redhat.com',
     packages=['should_be', 'should_be.tests', 'should_be.extensions'],
     description='Python Assertion Helpers inspired by Shouldly',
-    long_description=open('README.txt').read(),
+    long_description=open('README.rst').read(),
     license='LICENSE.txt',
     url="https://github.com/directxman12/should_be",
     classifiers=[
