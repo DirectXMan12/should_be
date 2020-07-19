@@ -49,6 +49,12 @@ The easy way
 
 .. code-block:: bash
 
+   $ sudo pip install shouldbe
+
+The easy way for the latest code
+
+.. code-block:: bash
+
    $ sudo pip install https://github.com/DirectXMan12/should_be.git#egg=ShouldBe
 
 The slightly-less-easy way
