@@ -103,7 +103,7 @@ def buildFunction(baseFunc, code=None, glbls=None,
     return resf
 
 
-def buildCode(baseCode, argcount=None, kwonlyargcount=None,
+def buildCode(baseCode, argcount=None, posonlyargcount=None, kwonlyargcount=None,
               nlocals=None, stacksize=None, flags=None,
               code=None, consts=None, names=None,
               varnames=None, filename=None, name=None,
@@ -118,6 +118,24 @@ def buildCode(baseCode, argcount=None, kwonlyargcount=None,
     if hasattr(_f, 'func_code'):
         # Python 2.x
         resc = CodeType(argcount or baseCode.co_argcount,
+                        nlocals or baseCode.co_nlocals,
+                        stacksize or baseCode.co_stacksize,
+                        flags or baseCode.co_flags,
+                        code or baseCode.co_code,
+                        consts or baseCode.co_consts,
+                        names or baseCode.co_names,
+                        varnames or baseCode.co_varnames,
+                        filename or baseCode.co_filename,
+                        name or baseCode.co_name,
+                        firstlineno or baseCode.co_firstlineno,
+                        lnotab or baseCode.co_lnotab,
+                        freevars or baseCode.co_freevars,
+                        cellvars or baseCode.co_cellvars)
+    elif hasattr(baseCode, 'co_posonlyargcount'):
+        # Python 3.8
+        resc = CodeType(argcount or baseCode.co_argcount,
+                        posonlyargcount or baseCode.co_posonlyargcount,
+                        kwonlyargcount or baseCode.co_kwonlyargcount,
                         nlocals or baseCode.co_nlocals,
                         stacksize or baseCode.co_stacksize,
                         flags or baseCode.co_flags,
